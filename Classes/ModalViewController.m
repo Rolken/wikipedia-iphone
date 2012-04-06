@@ -50,7 +50,7 @@
 	[navigationBar setLeftBarButtonItem:editButton animated:YES];
 	
 	NSError *error = nil;
-	if (![[self fetchedResultsController] performFetch:&error]) {
+	if (![self.fetchedResultsController performFetch:&error]) {
 		NSLog(@"Unresolved error %@, %@", error, [error userInfo]);
 	}
 }
@@ -127,7 +127,7 @@
 }
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    return [[fetchedResultsController sections] count];
+    return fetchedResultsController.sections.count;
 }
 
 
@@ -170,7 +170,7 @@
 		cell.detailTextLabel.text = formattedDate;
 		cell.detailTextLabel.font = [UIFont systemFontOfSize:14.0f];
                 
-                [dateFormat release];
+        [dateFormat release];
 	}
 	
 	cell.imageView.image = [UIImage imageNamed:@"UITabBarBookmarksTemplate.png"];
@@ -307,12 +307,12 @@
 	
 	switch([self.bookmarkToggle selectedSegmentIndex])
 	{
-		case 0: {
+		case 0:
 			isBookmark = YES;
 			navigationBar.title = NSLocalizedString(@"Bookmarks", @"Bookmarks");
 			[navigationBar setLeftBarButtonItem:editButton animated:YES];
-		}; break;
-		case 1: {
+            break;
+		case 1:
 			isBookmark = NO;
 			navigationBar.title = NSLocalizedString(@"History", @"History");
 			
@@ -320,16 +320,18 @@
 														  style:UIBarButtonItemStylePlain
 														 target:self
 														 action:@selector(clearHistorySheet)];
-			
 			[clearAll autorelease];
-                        [navigationBar setLeftBarButtonItem:clearAll animated:YES];
-		}; break;
-		default: break;
+            [navigationBar setLeftBarButtonItem:clearAll animated:YES];
+            break;
+		default:
+            break;
 	}
+    
 	NSError *error = nil;
 	if (![[self fetchedResultsController] performFetch:&error]) {
 		NSLog(@"Unresolved error %@, %@", error, [error userInfo]);
 	}
+    
 	NSIndexSet *indexSet = [NSIndexSet indexSetWithIndex:0];
 	[tableView beginUpdates];
 	[tableView reloadSections:indexSet withRowAnimation:UITableViewRowAnimationFade];
@@ -351,11 +353,15 @@
         [menu release];
 }
 
-- (void)actionSheet:(UIActionSheet *)actionSheet clickedButtonAtIndex:(int)buttonIndex
-{		
-	if(buttonIndex == 0)
-	{
-		[self clearHistory];
+- (void)actionSheet:(UIActionSheet *)actionSheet clickedButtonAtIndex:(int)buttonIndex {		
+
+	switch (buttonIndex) {
+        case 0:
+            [self clearHistory];
+            break;
+        default:
+            NSLog(@"Unknown actionSheet buttonIndex in ModalViewController.");
+            break;
 	}
 }
 

@@ -15,16 +15,9 @@
 @class SBJsonParser;
 
 @interface MapViewController : UIViewController <MKMapViewDelegate, CLControllerDelegate, CLLocationManagerDelegate, UISearchBarDelegate, UITableViewDelegate, UITableViewDataSource> {
-	MKMapView *mapView;
 	CLController *locationController;
-	NSMutableArray *annotations;
-	UINavigationController *navController;
 	BOOL firstLoad;
 	UITableView *tableView;
-	CLLocationCoordinate2D currentLocation;
-	UIBarButtonItem *locationBtn;
-	UISegmentedControl *mapListSwitch;
-	UISearchBar *searchBar;
     SBJsonParser *parser;
 }
 

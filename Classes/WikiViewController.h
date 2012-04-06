@@ -10,22 +10,9 @@
 #import "Wikipedia_MobileAppDelegate.h"
 #import "MapViewController.h"
 #import "MBProgressHUD.h"
-#import "WikiWebView.h"
+#import "WikiWebViewIntermediaryDelegate.h"
 
-@interface WikiViewController : UIViewController <UIWebViewDelegate, UIActionSheetDelegate, MBProgressHUDDelegate> {
-	Wikipedia_MobileAppDelegate *appDelegate;
-
-	NSString *wikiEntryURL;
-	WikiWebView *webView;
-        UIToolbar *toolbar;
-        UIBarButtonItem *backButton;
-        UIBarButtonItem *forwardButton;
-	MapViewController *superView;
-	NSString *pageTitle;
-	MBProgressHUD *HUD;
-	
-	NSManagedObjectContext *managedObjectContext;
-}
+@interface WikiViewController : UIViewController <UIWebViewDelegate, UIActionSheetDelegate, MBProgressHUDDelegate>
 
 @property (nonatomic, retain) Wikipedia_MobileAppDelegate *appDelegate;
 
@@ -34,7 +21,8 @@
 @property (nonatomic, retain) IBOutlet UIToolbar *toolbar;
 @property (nonatomic, retain) IBOutlet UIBarButtonItem *backButton;
 @property (nonatomic, retain) IBOutlet UIBarButtonItem *forwardButton;
-@property (nonatomic, retain) IBOutlet WikiWebView *webView;
+@property (nonatomic, retain) IBOutlet UIWebView *webView;
+@property (nonatomic, retain) WikiWebViewIntermediaryDelegate *webViewIntermediaryDelegate;
 @property (nonatomic, retain) MapViewController *superView;
 
 @property (nonatomic, retain) NSManagedObjectContext *managedObjectContext;	

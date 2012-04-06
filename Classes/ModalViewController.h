@@ -11,18 +11,7 @@
 #import "RecentPage.h"
 #import "Bookmark.h"
 
-@interface ModalViewController : UIViewController <NSFetchedResultsControllerDelegate, UIActionSheetDelegate> {
-	UITableView *tableView;
-	UINavigationItem *navigationBar;
-	
-	NSFetchedResultsController *fetchedResultsController;
-	NSManagedObjectContext *managedObjectContext;
-	
-	BOOL isBookmark;
-	UISegmentedControl *bookmarkToggle;
-	UIBarButtonItem *editButton;
-	RootViewController *returnView;
-}
+@interface ModalViewController : UIViewController <NSFetchedResultsControllerDelegate, UIActionSheetDelegate>
 
 @property (nonatomic, retain) IBOutlet UITableView *tableView;
 @property (nonatomic, retain) IBOutlet UINavigationItem *navigationBar;

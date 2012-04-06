@@ -9,9 +9,16 @@
 #import "LanguageSwitcher.h"
 
 
+@interface LanguageSwitcher ()
+
+@property (nonatomic, retain) NSUserDefaults *settings;
+
+@end
+
+
 @implementation LanguageSwitcher
 
-@synthesize languagesArray, tableView, markedIndexPath, returnView;
+@synthesize languagesArray, tableView, markedIndexPath, returnView, settings;
 
 /*
 - (id)initWithStyle:(UITableViewStyle)style {
@@ -29,12 +36,12 @@
 	NSString *languagesPlist = [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:@"languages.plist"];
 	languagesArray = [[NSMutableArray arrayWithContentsOfFile:languagesPlist] retain];
 	
-	settings = [NSUserDefaults standardUserDefaults];
+	self.settings = [NSUserDefaults standardUserDefaults];
 }
 
 - (IBAction)dismissModalView {
-	returnView.appDelegate = (Wikipedia_MobileAppDelegate *)[[UIApplication sharedApplication] delegate];
-	returnView.searchBar.scopeButtonTitles = [NSArray arrayWithObjects:[returnView.appDelegate.settings stringForKey:@"languageName"], NSLocalizedString(@"Set Language", @"Set Language"), nil];
+	//returnView.appDelegate = (Wikipedia_MobileAppDelegate *)[[UIApplication sharedApplication] delegate];
+	returnView.searchBar.scopeButtonTitles = [NSArray arrayWithObjects:[self.settings stringForKey:@"languageName"], NSLocalizedString(@"Set Language", @"Set Language"), nil];
 	returnView.searchBar.selectedScopeButtonIndex = 0;
 	
 	[self dismissModalViewControllerAnimated:YES];
@@ -101,12 +108,12 @@
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     
 	static NSString *CellIdentifier = @"Cell";
-        UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier];
+    UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier];
 	
 	NSMutableDictionary *dictItem = [languagesArray objectAtIndex:indexPath.row];
 	cell.textLabel.text = [dictItem valueForKey:@"language"];
 	
-	if ([[dictItem valueForKey:@"path"] isEqualToString:[settings stringForKey:@"languageKey"]]) {
+	if ([[dictItem valueForKey:@"path"] isEqualToString:[self.settings stringForKey:@"languageKey"]]) {
 		cell.accessoryType = UITableViewCellAccessoryCheckmark;
 	} else {
 		cell.accessoryType = UITableViewCellAccessoryNone;
@@ -129,8 +136,8 @@
 	[self.tableView deselectRowAtIndexPath:indexPath animated:YES];
 	
 	NSMutableDictionary *dictItem = [languagesArray objectAtIndex:indexPath.row];
-	[settings setObject:[dictItem valueForKey:@"path"] forKey:@"languageKey"];
-	[settings setObject:[dictItem valueForKey:@"language"] forKey:@"languageName"];
+	[self.settings setObject:[dictItem valueForKey:@"path"]     forKey:@"languageKey"];
+	[self.settings setObject:[dictItem valueForKey:@"language"] forKey:@"languageName"];
 }
 
 

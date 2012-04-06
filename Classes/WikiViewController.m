@@ -11,11 +11,20 @@
 #import "RecentPage.h"
 #import "Bookmark.h"
 
+
+@interface WikiViewController ()
+
+@property (nonatomic, retain) MBProgressHUD *HUD;
+
+@end
+
 @implementation WikiViewController
 
 @synthesize appDelegate, wikiEntryURL, webView, superView, toolbar, backButton, forwardButton;
 @synthesize pageTitle;
 @synthesize managedObjectContext;
+@synthesize HUD;
+@synthesize webViewIntermediaryDelegate;
 
 /*
  // The designated initializer.  Override if you create the controller programmatically and want to perform customization that is not appropriate for viewDidLoad.
@@ -59,7 +68,7 @@
 		NSLog(@"%@", errorString);
 		
 		[UIApplication sharedApplication].networkActivityIndicatorVisible = NO; 
-		[HUD hide:YES];
+		[self.HUD hide:YES];
 	}
         
         self.backButton.enabled = awebView.canGoBack;
@@ -71,7 +80,7 @@
 	
 	pageTitle = [self.webView stringByEvaluatingJavaScriptFromString:@"document.title"]; 
 	
-	[HUD hide:YES];
+	[self.HUD hide:YES];
 	
 	if (![pageTitle isEqualToString:@"Wikipedia"] && ![pageTitle isEqualToString:nil]) {
 		[self addRecentPage:pageTitle];
@@ -83,7 +92,7 @@
 
 
 - (void)viewWillDisappear:(BOOL)animated {
-	[HUD hide:YES];
+	[self.HUD hide:YES];
 }
 
 /*
@@ -97,9 +106,9 @@
 - (void)addRecentPage:(NSString *)pageName {
 	RecentPage *recentPage = (RecentPage *)[NSEntityDescription insertNewObjectForEntityForName:@"RecentPage" inManagedObjectContext:managedObjectContext];
 	
-	[recentPage setValue:[NSDate date] forKey:@"dateVisited"];
-	[recentPage setValue:pageName forKey:@"pageName"];
-	[recentPage setValue:[self wikiEntryURL] forKey:@"pageURL"];
+	[recentPage setValue:[NSDate date]     forKey:@"dateVisited"];
+	[recentPage setValue:pageName          forKey:@"pageName"];
+	[recentPage setValue:self.wikiEntryURL forKey:@"pageURL"];
 	
 	NSError *error;
 	if (![managedObjectContext save:&error]) {
@@ -135,11 +144,12 @@
 - (void)addBookmark:(NSString *)pageName {
 	Bookmark *bookmark = (Bookmark *)[NSEntityDescription insertNewObjectForEntityForName:@"Bookmark" inManagedObjectContext:managedObjectContext];
 	
-	[bookmark setValue:pageName forKey:@"pageName"];
-	[bookmark setValue:[self wikiEntryURL] forKey:@"pageURL"];
+	[bookmark setValue:pageName          forKey:@"pageName"];
+	[bookmark setValue:self.wikiEntryURL forKey:@"pageURL"];
 	
 	NSError *error;
 	if (![managedObjectContext save:&error]) {
+        // TODO: What is this? No error handling?
 	}
 }
 
@@ -158,15 +168,15 @@
 #pragma mark HUD
 
 - (void)showLoadingHUD {
-	HUD = [[MBProgressHUD alloc] initWithView:self.view];
-	HUD.mode = MBProgressHUDModeIndeterminate;
+	self.HUD = [[[MBProgressHUD alloc] initWithView:self.view] autorelease];
+	self.HUD.mode = MBProgressHUDModeIndeterminate;
 	
 	[self.view addSubview:HUD];
-	HUD.delegate = self;
+	self.HUD.delegate = self;
 	
-	HUD.labelText = NSLocalizedString(@"Loading...", @"Loading...");
+	self.HUD.labelText = NSLocalizedString(@"Loading...", @"Loading...");
 	
-	[HUD show:YES];
+	[self.HUD show:YES];
 }
 
 - (void)hudWasHidden:(MBProgressHUD *)aHUD {
@@ -190,6 +200,7 @@
 - (void)dealloc {
     [super dealloc];
 	[webView release];
+    [HUD release];
 }
 
 

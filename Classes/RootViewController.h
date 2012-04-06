@@ -9,33 +9,18 @@
 #import "Wikipedia_MobileAppDelegate.h"
 #import "SBJson.h"
 #import "MBProgressHUD.h"
-#import "WikiWebView.h"
+#import "WikiWebViewIntermediaryDelegate.h"
 
 @interface RootViewController : UIViewController <UISearchBarDelegate, UIWebViewDelegate, UIActionSheetDelegate, UITableViewDelegate, UITableViewDataSource, MBProgressHUDDelegate> {
-	Wikipedia_MobileAppDelegate *appDelegate;
-	
-	WikiWebView *webView;
-	UISearchBar *searchBar;
-	UIToolbar *toolBar;
-	UIBarButtonItem *backButton;
-	UIBarButtonItem *forwardButton;
-        
-	NSString *pageTitle;
-    NSURL *externalURL;
-	UIView *shade;
-	UITableView *tableView;
 	MBProgressHUD *HUD;
 	NSTimer *timer;
 	BOOL HUDvisible;
 	
-	NSMutableArray *searchResults;
-	NSManagedObjectContext *managedObjectContext;
     BOOL _isDataSourceAvailable;
 }
 
-@property (nonatomic, retain) Wikipedia_MobileAppDelegate *appDelegate;
-
-@property (nonatomic, retain) IBOutlet WikiWebView *webView;
+@property (nonatomic, retain) IBOutlet UIWebView *webView;
+@property (nonatomic, retain) WikiWebViewIntermediaryDelegate *webViewIntermediaryDelegate;
 @property (nonatomic, retain) IBOutlet UISearchBar *searchBar;
 @property (nonatomic, retain) IBOutlet UIToolbar *toolBar;
 @property (nonatomic, retain) IBOutlet UIBarButtonItem *backButton;

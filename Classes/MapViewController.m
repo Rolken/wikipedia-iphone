@@ -53,9 +53,8 @@
 #pragma mark MapViewController
 
 @implementation MapViewController
-@protocol AddressAnnotation;
-@synthesize latitude, longitude;
 
+@synthesize latitude, longitude;
 @synthesize mapView, annotations, navController, tableView, currentLocation, locationBtn, mapListSwitch, searchBar;
 
 
@@ -132,7 +131,7 @@
     NSLog(@"Loading: %@", urlString);
 
     id delegate = self;
-    WikiConnectionController *connectionController = [[[WikiConnectionController alloc] initWithDelegate:delegate selSucceeded:@selector(connectionSucceeded:) selFailed:@selector(connectionFailed:)] autorelease];
+    WikiConnectionController *connectionController = [[[WikiConnectionController alloc] initWithDelegate:delegate selectorForSuccess:@selector(connectionSucceeded:) selectorForFailure:@selector(connectionFailed:)] autorelease];
     [connectionController startRequestForURL:[NSURL URLWithString:urlString]];
 }
 
@@ -250,7 +249,7 @@
 	NSLog(@"Loading: %@", urlString);
     
     id delegate = self;
-    WikiConnectionController *connectionController = [[[WikiConnectionController alloc] initWithDelegate:delegate selSucceeded:@selector(refetchConnectionSucceeded:) selFailed:@selector(refetchConnectionFailed:)] autorelease];
+    WikiConnectionController *connectionController = [[[WikiConnectionController alloc] initWithDelegate:delegate selectorForSuccess:@selector(refetchConnectionSucceeded:) selectorForFailure:@selector(refetchConnectionFailed:)] autorelease];
     [connectionController startRequestForURL:[NSURL URLWithString:urlString]];
 }
 
@@ -307,7 +306,7 @@
 	NSLog(@"Loading: %@", urlString);
     
     id delegate = self;
-    WikiConnectionController *connectionController = [[[WikiConnectionController alloc] initWithDelegate:delegate selSucceeded:@selector(fetchWikiPagesAtLocationConnectionSucceeded:) selFailed:@selector(fetchWikiPagesAtLocationConnectionFailed:)] autorelease];
+    WikiConnectionController *connectionController = [[[WikiConnectionController alloc] initWithDelegate:delegate selectorForSuccess:@selector(fetchWikiPagesAtLocationConnectionSucceeded:) selectorForFailure:@selector(fetchWikiPagesAtLocationConnectionFailed:)] autorelease];
     [connectionController startRequestForURL:[NSURL URLWithString:urlString]];
 }
 

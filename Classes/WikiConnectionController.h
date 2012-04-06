@@ -8,15 +8,13 @@
 
 #import <Foundation/Foundation.h>
 
-@interface WikiConnectionController : NSObject {
-    NSMutableData* receivedData;
-}
+@interface WikiConnectionController : NSObject
 
 @property (nonatomic, retain) id connectionDelegate;
 @property (nonatomic) SEL succeededAction;
 @property (nonatomic) SEL failedAction;
 
-- (id)initWithDelegate:(id)delegate selSucceeded:(SEL)succeeded selFailed:(SEL)failed;
+- (id)initWithDelegate:(id)delegate selectorForSuccess:(SEL)succeeded selectorForFailure:(SEL)failed;
 - (BOOL)startRequestForURL:(NSURL*)url;
 
 @end

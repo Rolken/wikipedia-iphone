@@ -6,14 +6,12 @@
 //  Copyright Wikimedia Foundation 2010. All rights reserved.
 //
 
+#define APP_DELEGATE ((Wikipedia_MobileAppDelegate *)([UIApplication sharedApplication].delegate))
+
 @interface Wikipedia_MobileAppDelegate : NSObject <UIApplicationDelegate> {
 	NSManagedObjectModel *managedObjectModel;
     NSManagedObjectContext *managedObjectContext;	    
     NSPersistentStoreCoordinator *persistentStoreCoordinator;
-	
-    UIWindow *window;
-    UINavigationController *navigationController;
-	NSUserDefaults *settings;
 }
 
 @property (nonatomic, retain, readonly) NSManagedObjectModel *managedObjectModel;

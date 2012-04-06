@@ -19,21 +19,22 @@
 
 @implementation RootViewController
 
-@synthesize webView, searchBar, searchResults, toolBar, backButton, forwardButton;
-@synthesize appDelegate, pageTitle, shade, tableView, externalURL;
+@synthesize webView = _webView, searchBar = _searchBar, searchResults = _searchResults, toolBar = _toolBar, backButton = _backButton, forwardButton = _forwardButton;
+@synthesize pageTitle = _pageTitle, shade = _shade, tableView = _tableView, externalURL = _externalURL;
 
 @synthesize managedObjectContext;
+@synthesize webViewIntermediaryDelegate;
 
 - (void)viewWillAppear:(BOOL)animated {
 	
 }
 
 - (void)loadStartPage {
-	NSString *url = [NSString stringWithFormat:@"http://%@.m.wikipedia.org", [appDelegate.settings stringForKey:@"languageKey"]];
+	NSString *url = [NSString stringWithFormat:@"http://%@.m.wikipedia.org", [APP_DELEGATE.settings stringForKey:@"languageKey"]];
 	NSURL *_url = [NSURL URLWithString:url];
 	NSMutableURLRequest *URLrequest = [NSMutableURLRequest requestWithURL:_url];
 	
-	[webView loadRequest:URLrequest];
+	[self.webView loadRequest:URLrequest];
 }
 
 - (BOOL)isDataSourceAvailable
@@ -92,16 +93,15 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    webView.delegate = self;
-	appDelegate = (Wikipedia_MobileAppDelegate *)[[UIApplication sharedApplication] delegate];
-    webView.customHeaders = [NSDictionary dictionaryWithObjectsAndKeys:@"Wikipedia Mobile/2.2.1", @"Application_Version", nil];
-	webView.scalesPageToFit = TRUE;
-	webView.multipleTouchEnabled = TRUE;
-	searchBar.showsScopeBar = NO;
-	searchBar.frame = CGRectMake(0, 0, 320.0f, 44.0f);
+    self.webViewIntermediaryDelegate = [[[WikiWebViewIntermediaryDelegate alloc] initWithWebView:self.webView delegate:self] autorelease];
+    self.webViewIntermediaryDelegate.customHeaders = [NSDictionary dictionaryWithObjectsAndKeys:@"Wikipedia Mobile/2.2.1", @"Application_Version", nil];
+	self.webView.scalesPageToFit = TRUE;
+	self.webView.multipleTouchEnabled = TRUE;
+	self.searchBar.showsScopeBar = NO;
+	self.searchBar.frame = CGRectMake(0, 0, 320.0f, 44.0f);
 	
-        backButton.enabled = NO;
-        forwardButton.enabled = NO;
+        self.backButton.enabled = NO;
+        self.forwardButton.enabled = NO;
     
     if ([self isDataSourceAvailable] == NO) {
 		UIAlertView *errorAlert = [[UIAlertView alloc] initWithTitle:NSLocalizedString(@"Error: No Internet Connection", @"Error: No Internet Connection") message:NSLocalizedString(@"This application requires internet access.", @"This application requires internet access.") delegate:self cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
@@ -111,7 +111,7 @@
         
 	[self loadStartPage];
 	
-	self.managedObjectContext = appDelegate.managedObjectContext;
+	self.managedObjectContext = APP_DELEGATE.managedObjectContext;
 	
 	NSFetchRequest *request = [[NSFetchRequest alloc] init];
 	NSEntityDescription *entity = [NSEntityDescription entityForName:@"RecentPage" inManagedObjectContext:managedObjectContext];
@@ -138,19 +138,19 @@
 	NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:_url];
     request.cachePolicy = NSURLRequestReloadIgnoringLocalCacheData;
 	
-	[webView loadRequest:request];
+	[self.webView loadRequest:request];
 	[request release];
 }
 
 - (void)loadWikiEntry:(NSString *)query {
 	query = [query stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
 	
-	NSString *url = [NSString stringWithFormat:@"http://%@.m.wikipedia.org/wiki?search=%@", [appDelegate.settings stringForKey:@"languageKey"], query]; 
+	NSString *url = [NSString stringWithFormat:@"http://%@.m.wikipedia.org/wiki?search=%@", [APP_DELEGATE.settings stringForKey:@"languageKey"], query]; 
 	NSURL *_url = [NSURL URLWithString:url];
 		
 	NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:_url];
 	
-	[webView loadRequest:request];
+	[self.webView loadRequest:request];
 	[request release];
 }
 
@@ -181,7 +181,7 @@
 
 #pragma mark WebViewDelegate
 
-- (void)webView:(UIWebView *)awebView didFailLoadWithError:(NSError *)error {
+- (void)webView:(UIWebView *)webView didFailLoadWithError:(NSError *)error {
 	[timer invalidate];
 	if (error != nil) {
 		NSString *errorString = [NSString stringWithFormat:@"%@", error];
@@ -190,23 +190,31 @@
 		if (error.code == -1003) {
 			UIAlertView *errorAlert = [[UIAlertView alloc] initWithTitle:NSLocalizedString(@"Can't find host", @"Can't find host") message:NSLocalizedString(@"Wikipedia could not be located. Please check your internet connection.", @"Wikipedia could not be located. Please check your internet connection.") delegate:self cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
 			[errorAlert show];
-                        [errorAlert release];
+            [errorAlert release];
 		}
 		
 		[UIApplication sharedApplication].networkActivityIndicatorVisible = NO; 
 		[HUD hide:YES];
 	}
 
-        self.backButton.enabled = awebView.canGoBack;
-        self.forwardButton.enabled = awebView.canGoForward;
+        self.backButton.enabled = webView.canGoBack;
+        self.forwardButton.enabled = webView.canGoForward;
 }
 
-- (void)webViewDidFinishLoad:(UIWebView *)awebView {
+- (void)webViewDidFinishLoad:(UIWebView *)webView {
 	[UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
 	
-	pageTitle = [self.webView stringByEvaluatingJavaScriptFromString:@"document.title"]; 
-	if (![pageTitle isEqualToString:@"Wikipedia"]) {
-		[searchBar setText:pageTitle];
+    NSString *fullTitle = [self.webView stringByEvaluatingJavaScriptFromString:@"document.title"];
+    
+    NSString *workingTitle = fullTitle;
+    
+    workingTitle = [workingTitle stringByReplacingOccurrencesOfString:@"- Wikipedia, the free encyclopedia" withString:@""]; // For addons to most pages
+    workingTitle = [workingTitle stringByReplacingOccurrencesOfString:@"Wikipedia, the free encyclopedia" withString:@"Wikipedia"]; // For title page text
+
+	self.pageTitle = workingTitle;
+    
+	if (![self.pageTitle isEqualToString:@"Wikipedia"]) {
+		self.searchBar.text = self.pageTitle;
 	}
 	
 	[timer invalidate];
@@ -214,12 +222,12 @@
 		[HUD hide:YES];
 	}
 	
-	if (![pageTitle isEqualToString:@"Wikipedia"] && ![pageTitle isEqualToString:nil]) {
-		[self addRecentPage:pageTitle];
+	if (![self.pageTitle isEqualToString:@"Wikipedia"] && ![self.pageTitle isEqualToString:nil]) {
+		[self addRecentPage:self.pageTitle];
 	}
         
-        self.backButton.enabled = awebView.canGoBack;
-        self.forwardButton.enabled = awebView.canGoForward;
+        self.backButton.enabled = webView.canGoBack;
+        self.forwardButton.enabled = webView.canGoForward;
 }
 
 - (void)addRecentPage:(NSString *)pageName {
@@ -228,7 +236,7 @@
 	[recentPage setValue:[NSDate date] forKey:@"dateVisited"];
 	[recentPage setValue:pageName forKey:@"pageName"];
 	
-	[recentPage setValue:[self currentURL] forKey:@"pageURL"];
+	[recentPage setValue:self.currentURL forKey:@"pageURL"];
 	
 	NSError *error;
 	if (![managedObjectContext save:&error]) {
@@ -236,7 +244,7 @@
 }
 
 - (NSString *)currentURL {
-	NSString *locationString = [webView stringByEvaluatingJavaScriptFromString:@"location.href;"];
+	NSString *locationString = [self.webView stringByEvaluatingJavaScriptFromString:@"location.href;"];
 	if(!locationString)
 		return nil;
 	locationString = [locationString stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
@@ -272,35 +280,34 @@
 }
  */
 
-#pragma mark searchbar stuff
+#pragma mark SearchBar stuff
 
-- (void)searchBarTextDidBeginEditing:(UISearchBar *)_searchBar {
-	shade.alpha = 0.0;
-	shade.hidden = NO;
-	appDelegate = (Wikipedia_MobileAppDelegate *)[[UIApplication sharedApplication] delegate];
+- (void)searchBarTextDidBeginEditing:(UISearchBar *)searchBar {
+	self.shade.alpha = 0.0;
+	self.shade.hidden = NO;
 	
     searchBar.text = nil;
 	searchBar.showsScopeBar = YES;
 	searchBar.selectedScopeButtonIndex = 0;
-	searchBar.scopeButtonTitles = [NSArray arrayWithObjects:[appDelegate.settings stringForKey:@"languageName"], NSLocalizedString(@"Set Language", @"Set Language"), nil];
+	searchBar.scopeButtonTitles = [NSArray arrayWithObjects:[APP_DELEGATE.settings stringForKey:@"languageName"], NSLocalizedString(@"Set Language", @"Set Language"), nil];
 	
 	[searchBar sizeToFit];
 	searchBar.frame = CGRectMake(0, 0, 320.0f, 88.0f);
 
 	[UIView beginAnimations:nil context:NULL];
 	[UIView setAnimationDuration:0.3];	
-	shade.alpha = 0.6;
+	self.shade.alpha = 0.6;
 	[UIView commitAnimations];
 	
-	if (webView.loading) {
-		[webView stopLoading];
+	if (self.webView.loading) {
+		[self.webView stopLoading];
 	}
 }
 
 - (void)searchBar:(UISearchBar *)searchBar textDidChange:(NSString *)searchText {
 	searchText = [searchText stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
 	
-	NSString *urlString = [NSString stringWithFormat:@"http://%@.wikipedia.org/w/api.php?action=opensearch&search=%@&format=json", [appDelegate.settings stringForKey:@"languageKey"], searchText];
+	NSString *urlString = [NSString stringWithFormat:@"http://%@.wikipedia.org/w/api.php?action=opensearch&search=%@&format=json", [APP_DELEGATE.settings stringForKey:@"languageKey"], searchText];
 	NSURL *url = [NSURL URLWithString:urlString];
 	
 	NSURLRequest *request = [[NSURLRequest alloc] initWithURL:url];
@@ -308,14 +315,14 @@
 	[connection release];
 	[request release];
 	
-	if ([searchText length] > 0) {
-		tableView.alpha = 1.0;
-		tableView.hidden = NO;
+	if (searchText.length > 0) {
+		self.tableView.alpha = 1.0;
+		self.tableView.hidden = NO;
 	} else {
-		tableView.alpha = 0.0;
-		tableView.hidden = YES;
+		self.tableView.alpha = 0.0;
+		self.tableView.hidden = YES;
 	}
-	[tableView setContentOffset:CGPointMake(0, 0) animated:YES];
+	[self.tableView setContentOffset:CGPointMake(0, 0) animated:YES];
 }
 
 - (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response {
@@ -328,14 +335,13 @@
 	NSArray *results = [jsonString JSONValue];
         
 	if (results && [results count] >= 1) {
-            searchResults = [NSMutableArray arrayWithArray:[results objectAtIndex:1]];
+            self.searchResults = [NSMutableArray arrayWithArray:[results objectAtIndex:1]];
         } else {
-            searchResults = [NSMutableArray array];
+            self.searchResults = [NSMutableArray array];
         }
-        [searchResults retain];
         [jsonString release];
         
-       	[tableView reloadData];
+       	[self.tableView reloadData];
 }
 
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection {
@@ -343,52 +349,52 @@
 }
 
 - (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error {
-	tableView.hidden = YES;
+	self.tableView.hidden = YES;
 }
 
-- (void)searchBarTextDidEndEditing:(UISearchBar *)_searchBar {
+- (void)searchBarTextDidEndEditing:(UISearchBar *)searchBar {
     if (searchBar.text == nil || [searchBar.text isEqualToString:@""]) {
-        pageTitle = [self.webView stringByEvaluatingJavaScriptFromString:@"document.title"]; 
-        if (![pageTitle isEqualToString:@"Wikipedia"]) {
-            [searchBar setText:pageTitle];
+//        self.pageTitle = [self.webView stringByEvaluatingJavaScriptFromString:@"document.title"]; 
+        if (![self.pageTitle isEqualToString:@"Wikipedia"]) {
+            searchBar.text = self.pageTitle;
         }
     }
 }
 
-- (void)searchBar:(UISearchBar *)_searchBar selectedScopeButtonIndexDidChange:(NSInteger)selectedScope {
+- (void)searchBar:(UISearchBar *)searchBar selectedScopeButtonIndexDidChange:(NSInteger)selectedScope {
 	if (selectedScope == 1) {
 		LanguageSwitcher *langSwitcher = [[LanguageSwitcher alloc] initWithNibName:@"LanguageSwitcher" bundle:nil];
 		langSwitcher.returnView = self;
 		[self.navigationController presentModalViewController:langSwitcher animated:YES];
 		[langSwitcher release];
-		if (webView.loading) {
-			[webView stopLoading];
+		if (self.webView.loading) {
+			[self.webView stopLoading];
 		}
 	}
 }
 
-- (void)searchBarBookmarkButtonClicked:(UISearchBar *)_searchBar {
+- (void)searchBarBookmarkButtonClicked:(UISearchBar *)searchBar {
 	ModalViewController *modalView = [[ModalViewController alloc] initWithNibName:@"ModalViewController" bundle:nil];
-	modalView.managedObjectContext = appDelegate.managedObjectContext;
+	modalView.managedObjectContext = APP_DELEGATE.managedObjectContext;
 	modalView.returnView = self;
 	modalView.isBookmark = YES;
 	[self.navigationController presentModalViewController:modalView animated:YES];
 	[modalView release];
-	if (webView.loading) {
-		[webView stopLoading];
+	if (self.webView.loading) {
+		[self.webView stopLoading];
 	}
 }
 
-- (void)searchBarSearchButtonClicked:(UISearchBar *)_searchBar {
-	shade.alpha = 0.6;
+- (void)searchBarSearchButtonClicked:(UISearchBar *)searchBar {
+	self.shade.alpha = 0.6;
 	[UIView beginAnimations:nil context:NULL];
 	[UIView setAnimationDuration:0.2];
-	shade.alpha = 0.0;
+	self.shade.alpha = 0.0;
 	[UIView commitAnimations];
-	shade.hidden = YES;
+	self.shade.hidden = YES;
 	
-	tableView.alpha = 0.0;
-	tableView.hidden = YES;
+	self.tableView.alpha = 0.0;
+	self.tableView.hidden = YES;
 	searchBar.showsScopeBar = NO;
 	[searchBar sizeToFit];
 	
@@ -397,21 +403,21 @@
 }
 
 - (IBAction)stopEditing {
-	shade.alpha = 0.6;
+	self.shade.alpha = 0.6;
 	[UIView beginAnimations:nil context:NULL];
 	[UIView setAnimationDuration:0.2];
-	shade.alpha = 0.0;
+	self.shade.alpha = 0.0;
 	[UIView commitAnimations];
 	
-	searchBar.showsScopeBar = NO;
-	[searchBar sizeToFit];
-	[searchBar resignFirstResponder];
+	self.searchBar.showsScopeBar = NO;
+	[self.searchBar sizeToFit];
+	[self.searchBar resignFirstResponder];
 }
 
 #pragma mark table view
 
 - (void)scrollViewWillBeginDragging:(UIScrollView *)_tableView {
-	[searchBar resignFirstResponder];
+	[self.searchBar resignFirstResponder];
 }
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)_tableView {
@@ -419,7 +425,7 @@
 }
 
 - (NSInteger)tableView:(UITableView *)_tableView numberOfRowsInSection:(NSInteger)section {
-	return [searchResults count];
+	return [self.searchResults count];
 }
 
 - (UITableViewCell *)tableView:(UITableView *)_tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -427,42 +433,42 @@
         static NSString *CellIdentifier = @"Cell";
         UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier];
 	
-	cell.textLabel.text = [searchResults objectAtIndex:indexPath.row];
+	cell.textLabel.text = [self.searchResults objectAtIndex:indexPath.row];
 	
     return [cell autorelease];
 }
 
 - (void)tableView:(UITableView *)_tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
-	[self loadWikiEntry:[searchResults objectAtIndex:indexPath.row]];
+	[self loadWikiEntry:[self.searchResults objectAtIndex:indexPath.row]];
 	
-	[tableView deselectRowAtIndexPath:indexPath animated:YES];
+	[self.tableView deselectRowAtIndexPath:indexPath animated:YES];
 	
-	searchBar.showsScopeBar = NO;
-	[searchBar setText:[searchResults objectAtIndex:indexPath.row]];
-	[searchBar sizeToFit];
-	[searchBar resignFirstResponder];
+	self.searchBar.showsScopeBar = NO;
+	[self.searchBar setText:[self.searchResults objectAtIndex:indexPath.row]];
+	[self.searchBar sizeToFit];
+	[self.searchBar resignFirstResponder];
 	
-	tableView.alpha = 1.0;
-	shade.alpha = 0.6;
+	self.tableView.alpha = 1.0;
+	self.shade.alpha = 0.6;
 	[UIView beginAnimations:nil context:NULL];
 	[UIView setAnimationDuration:0.2];
-	shade.alpha = 0.0;
-	tableView.alpha = 0.0;
+	self.shade.alpha = 0.0;
+	self.tableView.alpha = 0.0;
 	[UIView commitAnimations];
-	tableView.hidden = YES;
+	self.tableView.hidden = YES;
 }
 
 #pragma mark toolbar
 
 - (IBAction)showHistory {
 	ModalViewController *modalView = [[ModalViewController alloc] initWithNibName:@"ModalViewController" bundle:nil];
-	modalView.managedObjectContext = appDelegate.managedObjectContext;
+	modalView.managedObjectContext = APP_DELEGATE.managedObjectContext;
 	modalView.returnView = self;
 	modalView.isBookmark = NO;
 	[self.navigationController presentModalViewController:modalView animated:YES];
 	[modalView release];
-	if (webView.loading) {
-		[webView stopLoading];
+	if (self.webView.loading) {
+		[self.webView stopLoading];
 	}
 }
 
@@ -483,10 +489,10 @@
 {		
 	if(buttonIndex == 0)
 	{
-		pageTitle = [self.webView stringByEvaluatingJavaScriptFromString:@"document.title"]; 
+		self.pageTitle = [self.webView stringByEvaluatingJavaScriptFromString:@"document.title"]; 
 		
-		if (pageTitle != nil) {
-			[self addBookmark:pageTitle];
+		if (self.pageTitle != nil) {
+			[self addBookmark:self.pageTitle];
 		}
 	}
 }
@@ -496,7 +502,7 @@
 	Bookmark *bookmark = (Bookmark *)[NSEntityDescription insertNewObjectForEntityForName:@"Bookmark" inManagedObjectContext:managedObjectContext];
 	
 	[bookmark setValue:pageName forKey:@"pageName"];
-	[bookmark setValue:[self currentURL] forKey:@"pageURL"];
+	[bookmark setValue:self.currentURL forKey:@"pageURL"];
 	
 	NSError *error;
 	if (![managedObjectContext save:&error]) {
@@ -504,24 +510,24 @@
 }
 
 - (IBAction)goBack {
-	[webView goBack];
+	[self.webView goBack];
 }
 
 - (IBAction)goForward {
-	[webView goForward];
+	[self.webView goForward];
 }
 
 - (IBAction)nearbyButton {
 	MapViewController *mapView = [[MapViewController alloc] initWithNibName:@"MapViewController" bundle:nil];
 	[self.navigationController presentModalViewController:mapView animated:YES];
 	[mapView release];
-	if (webView.loading) {
-		[webView stopLoading];
+	if (self.webView.loading) {
+		[self.webView stopLoading];
 	}
 }
 
 - (void)reload {
-	[webView reload];
+	[self.webView reload];
 }
 
 /*
@@ -569,7 +575,10 @@
 
 - (void)dealloc {
     [super dealloc];
-	[webView release];
+	[_webView release];
+    [webViewIntermediaryDelegate release];
+    [_searchResults release];
+    
     self.externalURL = nil;
 }
 

@@ -20,13 +20,13 @@
 #pragma mark Application lifecycle
 
 - (void)applicationDidFinishLaunching:(UIApplication *)application {    
-    settings = [NSUserDefaults standardUserDefaults];
-	if ([settings stringForKey:@"languageKey"] == NULL) {
-		[settings setObject:@"en" forKey:@"languageKey"];
-		[settings setObject:@"English" forKey:@"languageName"];
+    self.settings = [NSUserDefaults standardUserDefaults];
+	if ([self.settings stringForKey:@"languageKey"] == NULL) {
+		[self.settings setObject:@"en"      forKey:@"languageKey"];
+		[self.settings setObject:@"English" forKey:@"languageName"];
 	}
 	
-	[window addSubview:[navigationController view]];
+	[window addSubview:navigationController.view];
 	[window makeKeyAndVisible];
 	
 	NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
@@ -44,7 +44,7 @@
 			NSString *errorString = [NSString stringWithFormat:@"%@ - %@", error, [error userInfo]];
 			UIAlertView *errorAlert = [[UIAlertView alloc] initWithTitle:NSLocalizedString(@"Database Error", @"Database Error") message:errorString delegate:self cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
 			[errorAlert show];
-                        [errorAlert release];
+            [errorAlert release];
         } 
     }
 }

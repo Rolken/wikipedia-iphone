@@ -9,14 +9,7 @@
 #import <UIKit/UIKit.h>
 #import "RootViewController.h"
 
-@interface LanguageSwitcher : UIViewController {
-	NSMutableArray *languagesArray;
-	UITableView *tableView;
-	NSUserDefaults *settings;
-	NSIndexPath *markedIndexPath;
-	
-	RootViewController *returnView;
-}
+@interface LanguageSwitcher : UIViewController
 
 @property (nonatomic, retain) NSMutableArray *languagesArray;
 @property (nonatomic, retain) IBOutlet UITableView *tableView;
